@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -eu
+
+npm run tsc-watch &
+npm run webpack-watch &
+wait

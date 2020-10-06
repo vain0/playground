@@ -4,3 +4,13 @@
 // nodeIntegration is set to true in webPreferences.
 // Use preload.js to selectively enable features
 // needed in the renderer process.
+
+import React from "react"
+import ReactDOM from "react-dom"
+import { Main, renderMain } from "./ui_main"
+
+document.addEventListener("DOMContentLoaded", () => {
+  const appContainerElement = document.getElementById("app-container") as HTMLDivElement
+
+  ReactDOM.render(renderMain(), appContainerElement)
+})
