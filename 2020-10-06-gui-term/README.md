@@ -42,3 +42,7 @@ GUI のターミナルエミュレータ。
 
 - Git との統合
     - ファイルの状態や、ブランチやスタッシュの表示など
+
+## See also
+
+- [electron/electron-quick-start-typescript\: Clone to try a simple Electron app (in TypeScript)](https://github.com/electron/electron-quick-start-typescript)

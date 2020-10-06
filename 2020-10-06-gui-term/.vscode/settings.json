@@ -1,0 +1,15 @@
+{
+    "files.watcherExclude": {
+        "**/.git/**": true,
+        "**/.hg/**": true,
+        "**/node_modules/*/**": true,
+        "**/target/**": true
+    },
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "[typescript]": {
+        "editor.formatOnSave": true
+    },
+    "[typescriptreact]": {
+        "editor.formatOnSave": true
+    }
+}
