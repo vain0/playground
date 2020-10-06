@@ -41,8 +41,10 @@ module.exports = {
     ],
   },
 
-  // externals: {
-  //   "react": "React",
-  //   "react-dom": "ReactDOM",
-  // },
+  // <https://webpack.js.org/configuration/externals/>
+  externals: {
+    "electron": "commonjs electron",
+    // "react": "React",
+    // "react-dom": "ReactDOM",
+  },
 }

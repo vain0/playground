@@ -1,3 +1,4 @@
+import { ipcRenderer } from "electron"
 import React from "react"
 
 interface JobState {
@@ -37,6 +38,14 @@ export const Main: React.FC<Props> = props => {
         value={text}
         onChange={() => {
           //
+        }}
+        onKeyPress={ev => {
+          const onlyCtrl = ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey
+          if (onlyCtrl) console.log(ev.key)
+          if (onlyCtrl && ev.key === "Enter") {
+            ipcRenderer.invoke('perform-action', text)
+            console.log("execute!")
+          }
         }} />
     </main>
   )

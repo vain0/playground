@@ -45,4 +45,5 @@ GUI のターミナルエミュレータ。
 
 ## See also
 
+- [electron docs](https://www.electronjs.org/docs)
 - [electron/electron-quick-start-typescript\: Clone to try a simple Electron app (in TypeScript)](https://github.com/electron/electron-quick-start-typescript)

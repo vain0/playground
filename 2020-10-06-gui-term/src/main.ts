@@ -1,5 +1,9 @@
-import { app, BrowserWindow } from "electron"
+import { app, BrowserWindow, ipcMain } from "electron"
 import * as path from "path"
+
+ipcMain.handle("app-execute", (ev, command) => {
+  console.log("[TRACE] Execute", command)
+})
 
 function createWindow() {
   // Create the browser window.
