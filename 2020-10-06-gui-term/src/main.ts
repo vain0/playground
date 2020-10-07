@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from "electron"
 import * as path from "path"
 
-ipcMain.handle("app-execute", (ev, command) => {
+ipcMain.handle("gt-execute", (ev, command) => {
   console.log("[TRACE] Execute", command)
 })
 
@@ -10,6 +10,7 @@ function createWindow() {
   const mainWindow = new BrowserWindow({
     height: 600,
     webPreferences: {
+      nodeIntegration: true,
       preload: path.join(__dirname, "preload.js"),
     },
     width: 800,

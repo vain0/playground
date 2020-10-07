@@ -43,7 +43,7 @@ export const Main: React.FC<Props> = props => {
           const onlyCtrl = ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey
           if (onlyCtrl) console.log(ev.key)
           if (onlyCtrl && ev.key === "Enter") {
-            ipcRenderer.invoke('perform-action', text)
+            ipcRenderer.invoke('gt-execute', text)
             console.log("execute!")
           }
         }} />
