@@ -1,37 +1,17 @@
 import { app, BrowserWindow, ipcMain } from "electron"
 import * as path from "path"
-import * as ChildProcess from "child_process"
+import { JobStatus, Running, Exited, ExitedOk } from "./shared/job_status"
 
 // <[microsoft/node-pty\: Fork pseudoterminals in Node.JS](https://github.com/microsoft/node-pty)>
 import * as pty from "node-pty"
 
 type JobId = string
 
-type Status =
-  {
-    kind: "RUNNING"
-  } | {
-    kind: "STOPPED"
-    exitCode: number
-  }
-
-const Running: Status = { kind: "RUNNING" }
-
-const Stopped = (exitCode: number): Status =>
-  ({
-    kind: "STOPPED",
-    exitCode,
-  })
-
-const StoppedOk: Status = Stopped(0)
-
-// const StoppedErr: Status = Stopped(1)
-
 interface JobState {
   id: JobId
   cmdline: string
   proc: pty.IPty | null
-  status: Status
+  status: JobStatus
 }
 
 let lastJobId = 0
@@ -52,11 +32,11 @@ const doExecute = (cmdline: string, reply: (...args: unknown[]) => void): JobSta
 
       console.log("[TRACE] cd", dir)
       workDir = dir
-      return { id: jobId, cmdline, proc: null, status: StoppedOk }
+      return { id: jobId, cmdline, proc: null, status: ExitedOk }
     }
     case "pwd": {
       console.log("[TRACE] pwd", workDir)
-      return { id: jobId, cmdline, proc: null, status: StoppedOk }
+      return { id: jobId, cmdline, proc: null, status: ExitedOk }
     }
     default:
       break
@@ -85,7 +65,7 @@ const doExecute = (cmdline: string, reply: (...args: unknown[]) => void): JobSta
 
   proc.onExit(({ exitCode, signal }) => {
     console.log("[TRACE] process exit", jobId, exitCode, signal)
-    job.status = Stopped(exitCode)
+    job.status = Exited(exitCode)
     reply("gt-job-exit", jobId, exitCode, signal)
   })
   return job
@@ -109,8 +89,8 @@ ipcMain.handle("gt-kill", (_ev, jobId, signal) => {
   console.log("[TRACE] gt-kill", jobId, signal)
 
   const job = jobs.find(j => j.id === jobId)
-  if (job == null || job.status.kind === "STOPPED" || job.proc == null) {
-    console.log("[WARN]     job missing, stopped or built-in", job?.status?.kind)
+  if (job == null || job.status.kind === "EXITED" || job.proc == null) {
+    console.log("[WARN]     job missing, exited or built-in", job?.status?.kind)
     return null
   }
 
@@ -122,8 +102,8 @@ ipcMain.handle("gt-write", (_ev, jobId, data) => {
   console.log("[TRACE] gt-write", jobId, data)
 
   const job = jobs.find(j => j.id === jobId)
-  if (job == null || job.status.kind === "STOPPED" || job.proc == null) {
-    console.log("[WARN]     job missing, stopped or built-in?", job?.status)
+  if (job == null || job.status.kind === "EXITED" || job.proc == null) {
+    console.log("[WARN]     job missing, exited or built-in?", job?.status)
     return null
   }
 

@@ -1,24 +1,8 @@
 import { ipcRenderer } from "electron"
 import React from "react"
+import { JobStatus, Exited, ExitedOk, ExitedErr } from "./shared/job_status"
 
 type JobId = string
-
-type JobStatus =
-  {
-    kind: "RUNNING"
-  } | {
-    kind: "EXITED"
-    exitCode: number
-  }
-
-const Running: JobStatus = { kind: "RUNNING" }
-
-const Exited = (exitCode: number): JobStatus =>
-  ({ kind: "EXITED", exitCode })
-
-const ExitedOk = Exited(0)
-
-const ExitedErr = Exited(1)
 
 interface JobState {
   jobId: JobId
