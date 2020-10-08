@@ -1,8 +1,8 @@
-# GUI Term (仮)
+# Reterm (仮)
 
-GUI のターミナルエミュレータ。
+IDE っぽい UI のターミナルエミュレータ。(Electron + React + TypeScript)
 
-ステータス: 未実装
+ステータス: ほとんど未実装
 
 ## 機能
 
@@ -43,7 +43,14 @@ GUI のターミナルエミュレータ。
 - Git との統合
     - ファイルの状態や、ブランチやスタッシュの表示など
 
-## See also
+## 類似プロジェクト?
 
-- [electron docs](https://www.electronjs.org/docs)
-- [electron/electron-quick-start-typescript\: Clone to try a simple Electron app (in TypeScript)](https://github.com/electron/electron-quick-start-typescript)
+(他に知っていたら教えてください。)
+
+- [railsware/upterm\: A terminal emulator for the 21st century.](https://github.com/railsware/upterm) (archived)
+
+## 開発用の資料
+
+- [electron docs](https://www.electronjs.org/docs) Electron のドキュメント
+- [electron/electron-quick-start-typescript\: Clone to try a simple Electron app (in TypeScript)](https://github.com/electron/electron-quick-start-typescript) リポジトリの土台になっているやつ
+- [microsoft/node-pty\: Fork pseudoterminals in Node.JS](https://github.com/microsoft/node-pty) プロセスを起動するやつ (`child_process` と違って、起動したプロセスにはターミナルから直接呼ばれたようにみえる)

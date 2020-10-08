@@ -1,11 +1,9 @@
 {
-    "name": "gui-term",
-    "version": "1.0.0",
-    "description": "GUI のターミナルエミュレータ",
-    "main": "index.js",
-    "directories": {
-        "doc": "docs"
-    },
+    "name": "reterm",
+    "version": "0.1.0",
+    "description": "IDE っぽい UI のターミナルエミュレータ",
+    "private": true,
+    "main": "target/main.js",
     "scripts": {
         "start": "npm run tsc-build && npm run webpack-build && npm run electron-run",
         "fix": "eslint --fix 'src/**' --ext '.ts,.tsx'",

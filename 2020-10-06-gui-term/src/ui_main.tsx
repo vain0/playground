@@ -18,7 +18,7 @@ export const Main: React.FC = () => {
   // 起動時に作業ディレクトリを受け取る。
   React.useEffect(() => {
     console.log("[TRACE] get-work-dir BEGIN")
-    ipcRenderer.invoke("gt-get-work-dir").then(workDir => {
+    ipcRenderer.invoke("rt-get-work-dir").then(workDir => {
       console.log("[TRACE] get-work-dir OK", workDir)
       setWorkDir(workDir)
     }).catch(err => console.error(err))
@@ -44,8 +44,8 @@ export const Main: React.FC = () => {
 
   // ジョブの出力を追記する。
   React.useEffect(() => {
-    ipcRenderer.on("gt-job-created", (_ev, jobId: JobId, cmdline: string, status) => {
-      console.log("[TRACE] gt-job-created", jobId)
+    ipcRenderer.on("rt-job-created", (_ev, jobId: JobId, cmdline: string, status) => {
+      console.log("[TRACE] rt-job-created", jobId)
 
       setJobs(jobs => [
         ...jobs,
@@ -58,8 +58,8 @@ export const Main: React.FC = () => {
       ])
     })
 
-    ipcRenderer.on("gt-job-data", (_ev, jobId: JobId, data: string) => {
-      console.log("[TRACE] gt-job-data", jobId, data.length)
+    ipcRenderer.on("rt-job-data", (_ev, jobId: JobId, data: string) => {
+      console.log("[TRACE] rt-job-data", jobId, data.length)
 
       setJobs(jobs => jobs.map(job => {
         if (job.jobId !== jobId) {
@@ -71,8 +71,8 @@ export const Main: React.FC = () => {
       }))
     })
 
-    ipcRenderer.on("gt-job-exit", (_ev, jobId: JobId, exitCode: number, signal: unknown) => {
-      console.log("[TRACE] gt-job-exit", jobId, exitCode, signal)
+    ipcRenderer.on("rt-job-exit", (_ev, jobId: JobId, exitCode: number, signal: unknown) => {
+      console.log("[TRACE] rt-job-exit", jobId, exitCode, signal)
 
       setJobs(jobs => jobs.map(job => {
         if (job.jobId !== jobId) {
@@ -97,7 +97,7 @@ export const Main: React.FC = () => {
     // const channel = new MessageChannel()
 
     console.log("[TRACE] execute", trimmedCmdline)
-    ipcRenderer.send("gt-execute", trimmedCmdline)
+    ipcRenderer.send("rt-execute", trimmedCmdline)
   }, [trimmedCmdline, jobs])
 
   return (

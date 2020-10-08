@@ -1,8 +1,6 @@
 import { app, BrowserWindow, ipcMain } from "electron"
 import * as path from "path"
 import { JobStatus, Running, Exited, ExitedOk } from "./shared/job_status"
-
-// <[microsoft/node-pty\: Fork pseudoterminals in Node.JS](https://github.com/microsoft/node-pty)>
 import * as pty from "node-pty"
 
 type JobId = string
@@ -60,33 +58,33 @@ const doExecute = (cmdline: string, reply: (...args: unknown[]) => void): JobSta
 
   proc.onData(data => {
     console.log("[TRACE] process data", jobId, data.length)
-    reply("gt-job-data", jobId, data)
+    reply("rt-job-data", jobId, data)
   })
 
   proc.onExit(({ exitCode, signal }) => {
     console.log("[TRACE] process exit", jobId, exitCode, signal)
     job.status = Exited(exitCode)
-    reply("gt-job-exit", jobId, exitCode, signal)
+    reply("rt-job-exit", jobId, exitCode, signal)
   })
   return job
 }
 
-ipcMain.handle("gt-get-work-dir", () => {
-  console.log("[TRACE] gt-get-work-dir")
+ipcMain.handle("rt-get-work-dir", () => {
+  console.log("[TRACE] rt-get-work-dir")
   return workDir
 })
 
-ipcMain.on("gt-execute", (ev, cmdline) => {
+ipcMain.on("rt-execute", (ev, cmdline) => {
   const reply = ev.reply.bind(ev)
   const job = doExecute(cmdline, reply)
 
   jobs.push(job)
 
-  ev.reply("gt-job-created", job.id, job.cmdline, job.status)
+  ev.reply("rt-job-created", job.id, job.cmdline, job.status)
 })
 
-ipcMain.handle("gt-kill", (_ev, jobId, signal) => {
-  console.log("[TRACE] gt-kill", jobId, signal)
+ipcMain.handle("rt-kill", (_ev, jobId, signal) => {
+  console.log("[TRACE] rt-kill", jobId, signal)
 
   const job = jobs.find(j => j.id === jobId)
   if (job == null || job.status.kind === "EXITED" || job.proc == null) {
@@ -98,8 +96,8 @@ ipcMain.handle("gt-kill", (_ev, jobId, signal) => {
   return true
 })
 
-ipcMain.handle("gt-write", (_ev, jobId, data) => {
-  console.log("[TRACE] gt-write", jobId, data)
+ipcMain.handle("rt-write", (_ev, jobId, data) => {
+  console.log("[TRACE] rt-write", jobId, data)
 
   const job = jobs.find(j => j.id === jobId)
   if (job == null || job.status.kind === "EXITED" || job.proc == null) {
