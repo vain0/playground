@@ -44,11 +44,11 @@ ipcMain.handle("gt-execute", (_ev, cmdline) => {
 
       console.log("[TRACE] cd", dir)
       workDir = dir
-      return
+      return jobId
     }
     case "pwd": {
       console.log("[TRACE] pwd", workDir)
-      return
+      return jobId
     }
     default:
       break
@@ -80,6 +80,8 @@ ipcMain.handle("gt-execute", (_ev, cmdline) => {
     job.status = { kind: "STOPPED", exitCode }
     ipcMain.emit("gt-exit", jobId, exitCode, signal)
   })
+
+  return jobId
 })
 
 ipcMain.handle("gt-kill", (_ev, jobId, signal) => {
