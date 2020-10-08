@@ -1,0 +1,11 @@
+[data-status="ok"] {
+    background: hsl(128, 100%, 95%);
+}
+
+[data-status="error"] {
+    background: hsl(0, 100%, 95%);
+}
+
+[data-status="running"] {
+    background: hsl(192, 50%, 95%);
+}

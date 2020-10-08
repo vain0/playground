@@ -15,10 +15,22 @@ type Status =
     exitCode: number
   }
 
+const Running: Status = { kind: "RUNNING" }
+
+const Stopped = (exitCode: number): Status =>
+  ({
+    kind: "STOPPED",
+    exitCode,
+  })
+
+const StoppedOk: Status = Stopped(0)
+
+// const StoppedErr: Status = Stopped(1)
+
 interface JobState {
   id: JobId
   cmdline: string
-  proc: pty.IPty
+  proc: pty.IPty | null
   status: Status
 }
 
@@ -26,34 +38,31 @@ let lastJobId = 0
 let workDir = process.cwd()
 const jobs: JobState[] = []
 
-ipcMain.handle("gt-get-work-dir", () => {
-  console.log("[TRACE] gt-get-work-dir")
-  return workDir
-})
-
-ipcMain.handle("gt-execute", (_ev, cmdline) => {
+const doExecute = (cmdline: string, reply: (...args: unknown[]) => void): JobState => {
   lastJobId++
   const jobId = lastJobId.toString()
 
   console.log("[TRACE] execute", jobId, cmdline)
   const [cmd, ...args] = cmdline.trim().split(" ")
 
+  // 組み込みコマンド
   switch (cmd) {
     case "cd": {
       const [dir] = args
 
       console.log("[TRACE] cd", dir)
       workDir = dir
-      return jobId
+      return { id: jobId, cmdline, proc: null, status: StoppedOk }
     }
     case "pwd": {
       console.log("[TRACE] pwd", workDir)
-      return jobId
+      return { id: jobId, cmdline, proc: null, status: StoppedOk }
     }
     default:
       break
   }
 
+  // 外部コマンド
   const proc = pty.spawn(cmd, args, {
     name: "xterm-color",
     cols: 80,
@@ -66,30 +75,42 @@ ipcMain.handle("gt-execute", (_ev, cmdline) => {
     id: jobId,
     cmdline,
     proc,
-    status: { kind: "RUNNING" },
+    status: Running,
   }
-  jobs.push(job)
 
   proc.onData(data => {
     console.log("[TRACE] process data", jobId, data.length)
-    ipcMain.emit("gt-data", jobId, data)
+    reply("gt-job-data", jobId, data)
   })
 
   proc.onExit(({ exitCode, signal }) => {
     console.log("[TRACE] process exit", jobId, exitCode, signal)
-    job.status = { kind: "STOPPED", exitCode }
-    ipcMain.emit("gt-exit", jobId, exitCode, signal)
+    job.status = Stopped(exitCode)
+    reply("gt-job-exit", jobId, exitCode, signal)
   })
+  return job
+}
 
-  return jobId
+ipcMain.handle("gt-get-work-dir", () => {
+  console.log("[TRACE] gt-get-work-dir")
+  return workDir
+})
+
+ipcMain.on("gt-execute", (ev, cmdline) => {
+  const reply = ev.reply.bind(ev)
+  const job = doExecute(cmdline, reply)
+
+  jobs.push(job)
+
+  ev.reply("gt-job-created", job.id, job.cmdline, job.status)
 })
 
 ipcMain.handle("gt-kill", (_ev, jobId, signal) => {
   console.log("[TRACE] gt-kill", jobId, signal)
 
   const job = jobs.find(j => j.id === jobId)
-  if (job == null || job.status.kind === "STOPPED") {
-    console.log("[WARN]     job missing or stopped", job?.status?.kind)
+  if (job == null || job.status.kind === "STOPPED" || job.proc == null) {
+    console.log("[WARN]     job missing, stopped or built-in", job?.status?.kind)
     return null
   }
 
@@ -101,8 +122,8 @@ ipcMain.handle("gt-write", (_ev, jobId, data) => {
   console.log("[TRACE] gt-write", jobId, data)
 
   const job = jobs.find(j => j.id === jobId)
-  if (job == null || job.status.kind === "STOPPED") {
-    console.log("[WARN]     job missing or stopped", job?.status)
+  if (job == null || job.status.kind === "STOPPED" || job.proc == null) {
+    console.log("[WARN]     job missing, stopped or built-in?", job?.status)
     return null
   }
 
@@ -122,7 +143,7 @@ function createWindow() {
   })
 
   // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, "../index.html"))
+  mainWindow.loadFile(path.join(__dirname, "../dist/index.html"))
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()

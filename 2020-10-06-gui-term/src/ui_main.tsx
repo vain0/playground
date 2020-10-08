@@ -1,19 +1,37 @@
 import { ipcRenderer } from "electron"
 import React from "react"
 
+type JobId = string
+
+type JobStatus =
+  {
+    kind: "RUNNING"
+  } | {
+    kind: "EXITED"
+    exitCode: number
+  }
+
+const Running: JobStatus = { kind: "RUNNING" }
+
+const Exited = (exitCode: number): JobStatus =>
+  ({ kind: "EXITED", exitCode })
+
+const ExitedOk = Exited(0)
+
+const ExitedErr = Exited(1)
+
 interface JobState {
-  jobId: string
-  command: string
+  jobId: JobId
+  cmdline: string
+  status: JobStatus
   output: string
 }
 
-type ExecuteFn = (cmdline: string) => void
-
-const ExecuteContext = React.createContext(null as unknown as ExecuteFn)
-
 export const Main: React.FC = () => {
   // 作業ディレクトリ
-  const [workDir, setWorkDir] = React.useState("")
+  const [workDir, setWorkDir] = React.useState("...")
+
+  // 起動時に作業ディレクトリを受け取る。
   React.useEffect(() => {
     console.log("[TRACE] get-work-dir BEGIN")
     ipcRenderer.invoke("gt-get-work-dir").then(workDir => {
@@ -22,18 +40,65 @@ export const Main: React.FC = () => {
     }).catch(err => console.error(err))
   }, [])
 
+  // ジョブリスト
+
   const [jobs, setJobs] = React.useState<JobState[]>([
+    // ダミーデータ
     {
       jobId: "-2",
-      command: "echo 'Hello, world!'",
+      cmdline: "echo 'Hello, world!'",
       output: "Hello, world!",
+      status: ExitedOk,
     },
     {
       jobId: "-1",
-      command: "pwd",
+      cmdline: "pwd",
       output: "/path/to/work-dir",
+      status: ExitedErr,
     },
   ])
+
+  // ジョブの出力を追記する。
+  React.useEffect(() => {
+    ipcRenderer.on("gt-job-created", (_ev, jobId: JobId, cmdline: string, status) => {
+      console.log("[TRACE] gt-job-created", jobId)
+
+      setJobs(jobs => [
+        ...jobs,
+        {
+          jobId,
+          cmdline,
+          output: "",
+          status,
+        },
+      ])
+    })
+
+    ipcRenderer.on("gt-job-data", (_ev, jobId: JobId, data: string) => {
+      console.log("[TRACE] gt-job-data", jobId, data.length)
+
+      setJobs(jobs => jobs.map(job => {
+        if (job.jobId !== jobId) {
+          return job
+        }
+
+        const output = job.output !== "" ? job.output + "\n" + data : data
+        return { ...job, output }
+      }))
+    })
+
+    ipcRenderer.on("gt-job-exit", (_ev, jobId: JobId, exitCode: number, signal: unknown) => {
+      console.log("[TRACE] gt-job-exit", jobId, exitCode, signal)
+
+      setJobs(jobs => jobs.map(job => {
+        if (job.jobId !== jobId) {
+          return job
+        }
+
+        return { ...job, status: Exited(exitCode) }
+      }))
+    })
+  }, [])
 
   // コマンドライン
   const [cmdline, setCmdline] = React.useState("pwd")
@@ -45,30 +110,25 @@ export const Main: React.FC = () => {
       return
     }
 
-    console.log("[TRACE] execute", trimmedCmdline)
-    const jobId = await ipcRenderer.invoke("gt-execute", trimmedCmdline)
-    console.log("[TRACE]   jobId: ", jobId)
+    // const channel = new MessageChannel()
 
-    setJobs([
-      ...jobs,
-      {
-        jobId,
-        command: trimmedCmdline,
-        output: "",
-      },
-    ])
+    console.log("[TRACE] execute", trimmedCmdline)
+    ipcRenderer.send("gt-execute", trimmedCmdline)
   }, [trimmedCmdline, jobs])
 
   return (
     <main id="app-main">
       <ul id="job-list">
-        {jobs.map(({ jobId, command, output }) => (
-          <li key={jobId}>
-            <div>
-              <code>$ {command}</code>
-            </div>
+        {jobs.map(({ jobId, cmdline: command, output, status }) => (
+          <li key={jobId} data-status={status.kind === "EXITED" ? (status.exitCode === 0 ? "ok" : "error") : "running"}>
+            <details>
+              <summary>
+                <code>$ {command}</code>
+                <code color="#666">#{jobId}</code>
+              </summary>
 
-            <pre>{output}</pre>
+              <pre style={{ background: "#eee" }}>{output}</pre>
+            </details>
           </li>
         ))}
       </ul>
