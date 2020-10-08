@@ -5,9 +5,8 @@
 // Use preload.js to selectively enable features
 // needed in the renderer process.
 
-import React from "react"
 import ReactDOM from "react-dom"
-import { Main, renderMain } from "./ui_main"
+import { renderMain } from "./ui_main"
 
 document.addEventListener("DOMContentLoaded", () => {
   const appContainerElement = document.getElementById("app-container") as HTMLDivElement

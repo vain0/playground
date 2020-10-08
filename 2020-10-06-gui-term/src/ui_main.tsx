@@ -7,14 +7,57 @@ interface JobState {
   output: string
 }
 
-interface Props {
-  workDir: string
-  jobs: JobState[]
-  text: string
-}
+type ExecuteFn = (cmdline: string) => void
 
-export const Main: React.FC<Props> = props => {
-  const { workDir, jobs, text } = props
+const ExecuteContext = React.createContext(null as unknown as ExecuteFn)
+
+export const Main: React.FC = () => {
+  // 作業ディレクトリ
+  const [workDir, setWorkDir] = React.useState("")
+  React.useEffect(() => {
+    console.log("[TRACE] get-work-dir BEGIN")
+    ipcRenderer.invoke("gt-get-work-dir").then(workDir => {
+      console.log("[TRACE] get-work-dir OK", workDir)
+      setWorkDir(workDir)
+    }).catch(err => console.error(err))
+  }, [])
+
+  const [jobs, setJobs] = React.useState<JobState[]>([
+    {
+      jobId: "-2",
+      command: "echo 'Hello, world!'",
+      output: "Hello, world!",
+    },
+    {
+      jobId: "-1",
+      command: "pwd",
+      output: "/path/to/work-dir",
+    },
+  ])
+
+  // コマンドライン
+  const [cmdline, setCmdline] = React.useState("pwd")
+
+  const trimmedCmdline = cmdline.trim()
+  const execute = React.useMemo(() => async () => {
+    if (trimmedCmdline === "") {
+      console.log("[TRACE] can't execute empty string")
+      return
+    }
+
+    console.log("[TRACE] execute", trimmedCmdline)
+    const jobId = await ipcRenderer.invoke("gt-execute", trimmedCmdline)
+    console.log("[TRACE]   jobId: ", jobId)
+
+    setJobs([
+      ...jobs,
+      {
+        jobId,
+        command: trimmedCmdline,
+        output: "",
+      },
+    ])
+  }, [trimmedCmdline, jobs])
 
   return (
     <main id="app-main">
@@ -35,40 +78,19 @@ export const Main: React.FC<Props> = props => {
       </div>
 
       <textarea
-        value={text}
-        onChange={() => {
-          //
-        }}
+        value={cmdline}
+        onChange={ev => setCmdline(ev.target.value)}
         onKeyPress={ev => {
           const onlyCtrl = ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey
-          if (onlyCtrl) console.log(ev.key)
           if (onlyCtrl && ev.key === "Enter") {
-            ipcRenderer.invoke('gt-execute', text)
-            console.log("execute!")
+            execute()
           }
-        }} />
+        }}
+        rows={4} />
     </main>
   )
 }
 
 export const renderMain = () => {
-  // ダミーデータ
-  const props: Props = {
-    workDir: "/path/to/work-dir",
-    jobs: [
-      {
-        jobId: "1",
-        command: "echo 'Hello, world!'",
-        output: "Hello, world!",
-      },
-      {
-        jobId: "2",
-        command: "pwd",
-        output: "/path/to/work-dir",
-      },
-    ],
-    text: "echo 'Bye!'",
-  }
-
-  return (<Main {...props} />)
+  return (<Main />)
 }
